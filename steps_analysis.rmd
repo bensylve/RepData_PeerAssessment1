@@ -23,8 +23,9 @@ Load the data set into a table so that analysis can be performed.
 # Load the dplyr package used to summarize the data
 library(dplyr)
 
-# Read the csv data and store it as a table excluding the null values
+# Read the csv data and store it as a tables
 activityTable <- read.csv("activity.csv")
+activityTableDF <- as_tibble(activityTable)
 activityWithoutNulls <- activityTable[!is.na(activityTable$steps),]
 activityWithoutNullsDF <- as_tibble(activityWithoutNulls)
 
@@ -41,8 +42,11 @@ intervals <- group_by(activityWithoutNullsDF, interval)
 intervalSummary <- summarise(intervals, steps = sum(steps), numOfDays = n_distinct(date))
 intervalSummary$avgSteps <- intervalSummary$steps / intervalSummary$numOfDays
 
-# Get the max average number of steps per interval and use it to find the interval with the highest average
-highestAvgInterval <- max(intervalSummary$avgSteps)
+# Get the interval with the highest average number of steps
+invervalWithMaxStepsOnAverage <- intervalSummary[intervalSummary$avgSteps == max(intervalSummary$avgSteps),]$interval
+
+# Get the number of records with null steps recorded
+numberOfRecordsWithNoData <- sum(is.na(activityTable$steps))
 ```
 
 ## Overview of Steps Taken Per Day
@@ -56,7 +60,13 @@ The mean number of steps per day was `r meanStepsTaken` while the median was `r 
 
 ## Average Daily Activity Pattern
 
+The interval with the highest average steps is `r invervalWithMaxStepsOnAverage`
+
 ```{r}
 # Display a line chart of the average number of steps per interval
 plot(intervalSummary$interval, intervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
 ```
+
+## Missing data
+
+The data set contains `r numberOfRecordsWithNoData` missing values.
