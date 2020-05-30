@@ -5,26 +5,45 @@ date: "5/28/2020"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Overview
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+This analysis is intended to provide an overview of personal movement using activity monitoring devices such as Fitbit. The focus is on gaining a better understanding of steps taken throughout the day.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+The data were collected during the months of October and November 2012 and includes the number of steps taken in 5 minute intervals each day.
 
-```{r cars}
-summary(cars)
+## Load and Preprocess the Data
+
+Load the data set into a table so that analysis can be performed.
+
+```{r}
+library(dplyr)
+activityTable <- read.csv("activity.csv")
+activityWithoutNulls <- activityTable[!is.na(activityTable$steps),]
+activityWithoutNullsDF <- as_tibble(activityWithoutNulls)
+days <- group_by(activityWithoutNullsDF, date)
+stepsByDaySummary <- summarise(days, steps = sum(steps))
 ```
 
-## Including Plots
+## Overview of Steps Taken Per Day
 
-You can also embed plots, for example:
+```{r}
+hist(stepsByDaySummary$steps,main="Steps Per Day",xlab="Number of Steps",col="blue")
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+meanStepsTaken <- as.character(round(mean(stepsByDaySummary$steps),1))
+medianStepsTaken <- as.character(round(median(stepsByDaySummary$steps),1))
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+The mean number of steps per day was `r meanStepsTaken` while the median was `r medianStepsTaken`.
+
+## Average Daily Activity Pattern
+
+```{r}
+intervals <- group_by(activityWithoutNullsDF, interval)
+intervalSummary <- summarise(intervals, steps = sum(steps), numOfDays = n_distinct(date))
+intervalSummary$avgSteps <- intervalSummary$steps / intervalSummary$numOfDays
+```
