@@ -22,34 +22,33 @@ Load the data set into a table so that analysis can be performed.
 ```{r}
 # Load the dplyr package used to summarize the data
 library(dplyr)
-# Read in the CSV file of data
+
+# Read the csv data and store it as a table excluding the null values
 activityTable <- read.csv("activity.csv")
-# Get the data without the null values
 activityWithoutNulls <- activityTable[!is.na(activityTable$steps),]
-# Add the data without nulls to a dplyr table
 activityWithoutNullsDF <- as_tibble(activityWithoutNulls)
 
-# Get the median and mean steps taken
+# Total the steps by date
+days <- group_by(activityWithoutNullsDF, date)
+stepsByDaySummary <- summarise(days, steps = sum(steps))
+
+# Get the mean and median steps per day
 meanStepsTaken <- as.character(round(mean(stepsByDaySummary$steps),1))
 medianStepsTaken <- as.character(round(median(stepsByDaySummary$steps),1))
 
-# Group by date
-days <- group_by(activityWithoutNullsDF, date)
-# Sum the steps for each date
-stepsByDaySummary <- summarise(days, steps = sum(steps))
-
-# Group by interval
+# Get the average number of steps per interval
 intervals <- group_by(activityWithoutNullsDF, interval)
-# Sum the number of steps and days
 intervalSummary <- summarise(intervals, steps = sum(steps), numOfDays = n_distinct(date))
-# Calculate the average
 intervalSummary$avgSteps <- intervalSummary$steps / intervalSummary$numOfDays
+
+# Get the max average number of steps per interval and use it to find the interval with the highest average
+highestAvgInterval <- max(intervalSummary$avgSteps)
 ```
 
 ## Overview of Steps Taken Per Day
 
 ```{r}
-# Produce a histogram of the steps taken per day
+# Display a histogram of the number of steps per day
 hist(stepsByDaySummary$steps,main="Steps Per Day",xlab="Number of Steps",col="blue")
 ```
 
@@ -58,6 +57,6 @@ The mean number of steps per day was `r meanStepsTaken` while the median was `r 
 ## Average Daily Activity Pattern
 
 ```{r}
-# Produce a line chart of the average number of steps taken per interval
+# Display a line chart of the average number of steps per interval
 plot(intervalSummary$interval, intervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
 ```
