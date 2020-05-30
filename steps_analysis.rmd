@@ -47,9 +47,45 @@ invervalWithMaxStepsOnAverage <- intervalSummary[intervalSummary$avgSteps == max
 
 # Get the number of records with null steps recorded
 numberOfRecordsWithNoData <- sum(is.na(activityTable$steps))
+
+# Default the steps with missing values substituted to the steps
+
+# Join the data with nulls to the interval summary based on the summary by interval
+activityTableWithIntervalAvgsDF <- left_join(activityTableDF, intervalSummary, by = "interval")
+# Add a column to store the number of steps with the substituted value for nulls
+activityTableWithIntervalAvgsDF$stepsNullsSubstituted <- activityTableWithIntervalAvgsDF$steps.x
+# Get the rows with nulls
+index <- is.na(activityTableWithIntervalAvgsDF$stepsNullsSubstituted)
+# Set the nulls to the average for that interval
+activityTableWithIntervalAvgsDF$stepsNullsSubstituted[index] <- activityTableWithIntervalAvgsDF$avgSteps
+
+# Make an equivalent table with the subsitute value
+newActivityTable <- select(activityTableWithIntervalAvgsDF, stepsNullsSubstituted, date, interval)
+newActivityTableDF <- as_tibble(newActivityTable)
+
+# Total the steps by date
+newDays <- group_by(newActivityTableDF, date)
+newStepsByDaySummary <- summarise(newDays, steps=sum(stepsNullsSubstituted))
+
+# Get the mean and median steps per day
+newMeanStepsTaken <- as.character(round(mean(newStepsByDaySummary$steps),1))
+newMedianStepsTaken <- as.character(round(median(newStepsByDaySummary$steps),1))
+
+newActivityTableDF$dayOfWeek <- weekdays(as.Date(newActivityTableDF$date))
+newActivityTableDF$dayType <- "Weekday"
+weekendIndex <- newActivityTableDF$dayOfWeek == "Saturday" | newActivityTableDF$dayOfWeek == "Sunday"
+newActivityTableDF$dayType[weekendIndex] <- "Weekend"
+
+weekendIntervalGroup <- group_by(newActivityTableDF[newActivityTableDF$dayType=="Weekend",], interval)
+weekendIntervalSummary <- summarise(weekendIntervalGroup, steps = sum(stepsNullsSubstituted), numOfDays = n_distinct(date))
+weekendIntervalSummary$avgSteps <- weekendIntervalSummary$steps / weekendIntervalSummary$numOfDays
+
+weekdayIntervalGroup <- group_by(newActivityTableDF[newActivityTableDF$dayType=="Weekday",], interval)
+weekdayIntervalSummary <- summarise(weekdayIntervalGroup, steps = sum(stepsNullsSubstituted), numOfDays = n_distinct(date))
+weekdayIntervalSummary$avgSteps <- weekdayIntervalSummary$steps / weekdayIntervalSummary$numOfDays
 ```
 
-## Overview of Steps Taken Per Day
+## Total Number of Steps Taken Per Day
 
 ```{r}
 # Display a histogram of the number of steps per day
@@ -67,6 +103,22 @@ The interval with the highest average steps is `r invervalWithMaxStepsOnAverage`
 plot(intervalSummary$interval, intervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
 ```
 
-## Missing data
+## Imputing Missing Values
 
 The data set contains `r numberOfRecordsWithNoData` missing values.
+
+```{r}
+# Display a histogram of the number of steps per day
+hist(newStepsByDaySummary$steps,main="Steps Per Day",xlab="Number of Steps",col="blue")
+```
+
+The mean number of steps per day was `r newMeanStepsTaken` while the median was `r newMedianStepsTaken`.
+
+There is not a major difference with the imputed values
+
+## Comparing Activity Patters of Weekdays to Weekends
+
+```{r}
+plot(weekendIntervalSummary$interval, weekendIntervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
+plot(weekendIntervalSummary$interval, weekdayIntervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
+```
