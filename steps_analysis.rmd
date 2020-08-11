@@ -59,6 +59,14 @@ activityTableWithIntervalAvgsDF$stepsNullsSubstituted <- activityTableWithInterv
 index <- is.na(activityTableWithIntervalAvgsDF$stepsNullsSubstituted)
 # Set the nulls to the average for that interval
 activityTableWithIntervalAvgsDF$stepsNullsSubstituted[index] <- activityTableWithIntervalAvgsDF$avgSteps
+# Add a field to determine if the day is a weekday or weekend
+activityTableWithIntervalAvgsDF$dayOfWeek <- weekdays(as.Date(activityTableWithIntervalAvgsDF$date))
+activityTableWithIntervalAvgsDF$dayType <- "Weekday"
+activityTableWeekendIndex <- activityTableWithIntervalAvgsDF$dayOfWeek == "Saturday" | activityTableWithIntervalAvgsDF$dayOfWeek == "Sunday"
+activityTableWithIntervalAvgsDF$dayType[activityTableWeekendIndex] <- "Weekend"
+
+# Add weekend summary
+summaryByDayType <- activityTableWithIntervalAvgsDF %>% group_by(dayType, interval) %>% summarize(avgStepsPerDayType = mean(stepsNullsSubstituted, na.rm=TRUE))
 
 # Make an equivalent table with the subsitute value
 newActivityTable <- select(activityTableWithIntervalAvgsDF, stepsNullsSubstituted, date, interval)
@@ -80,6 +88,10 @@ newActivityTableDF$dayType[weekendIndex] <- "Weekend"
 weekendIntervalGroup <- group_by(newActivityTableDF[newActivityTableDF$dayType=="Weekend",], interval)
 weekendIntervalSummary <- summarise(weekendIntervalGroup, steps = sum(stepsNullsSubstituted), numOfDays = n_distinct(date))
 weekendIntervalSummary$avgSteps <- weekendIntervalSummary$steps / weekendIntervalSummary$numOfDays
+
+weekdayIntervalGroup <- group_by(newActivityTableDF[newActivityTableDF$dayType=="Weekday",], interval)
+weekdayIntervalSummary <- summarise(weekdayIntervalGroup, steps = sum(stepsNullsSubstituted), numOfDays = n_distinct(date))
+weekdayIntervalSummary$avgSteps <- weekdayIntervalSummary$steps / weekdayIntervalSummary$numOfDays
 #http://zevross.com/blog/2019/04/02/easy-multi-panel-plots-in-r-using-facet_wrap-and-facet_grid-from-ggplot2/
 ```
 
@@ -117,7 +129,7 @@ There is not a major difference with the imputed values
 ## Comparing Activity Patters of Weekdays to Weekends
 
 ```{r}
-plot(weekendIntervalSummary$interval, weekendIntervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
-plot(weekendIntervalSummary$interval, weekdayIntervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
-ggplot(data=weekendIntervalSummary, aes(x=interval, y=avgSteps, group=1)) + geom_line() + geom_point()
+#plot(weekendIntervalSummary$interval, weekendIntervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
+#plot(weekdayIntervalSummary$interval, weekdayIntervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
+ggplot(data=summaryByDayType, aes(x=interval, y=avgStepsPerDayType, group=1)) + geom_line() + geom_point() + facet_wrap(~ dayType) + labs(y="Average Steps per Day", x="Interval")
 ```
