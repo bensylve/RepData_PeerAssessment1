@@ -22,6 +22,7 @@ Load the data set into a table so that analysis can be performed.
 ```{r}
 # Load the dplyr package used to summarize the data
 library(dplyr)
+library(ggplot2)
 
 # Read the csv data and store it as a tables
 activityTable <- read.csv("activity.csv")
@@ -79,10 +80,7 @@ newActivityTableDF$dayType[weekendIndex] <- "Weekend"
 weekendIntervalGroup <- group_by(newActivityTableDF[newActivityTableDF$dayType=="Weekend",], interval)
 weekendIntervalSummary <- summarise(weekendIntervalGroup, steps = sum(stepsNullsSubstituted), numOfDays = n_distinct(date))
 weekendIntervalSummary$avgSteps <- weekendIntervalSummary$steps / weekendIntervalSummary$numOfDays
-
-weekdayIntervalGroup <- group_by(newActivityTableDF[newActivityTableDF$dayType=="Weekday",], interval)
-weekdayIntervalSummary <- summarise(weekdayIntervalGroup, steps = sum(stepsNullsSubstituted), numOfDays = n_distinct(date))
-weekdayIntervalSummary$avgSteps <- weekdayIntervalSummary$steps / weekdayIntervalSummary$numOfDays
+#http://zevross.com/blog/2019/04/02/easy-multi-panel-plots-in-r-using-facet_wrap-and-facet_grid-from-ggplot2/
 ```
 
 ## Total Number of Steps Taken Per Day
@@ -121,4 +119,5 @@ There is not a major difference with the imputed values
 ```{r}
 plot(weekendIntervalSummary$interval, weekendIntervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
 plot(weekendIntervalSummary$interval, weekdayIntervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
+ggplot(data=weekendIntervalSummary, aes(x=interval, y=avgSteps, group=1)) + geom_line() + geom_point()
 ```
