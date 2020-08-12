@@ -22,6 +22,7 @@ Load the data set into a table so that analysis can be performed.
 ```{r}
 # Load the dplyr package used to summarize the data
 library(dplyr)
+# Load the ggplot2 package used to graph the data
 library(ggplot2)
 
 # Read the csv data and store it as a tables
@@ -79,20 +80,6 @@ newStepsByDaySummary <- summarise(newDays, steps=sum(stepsNullsSubstituted))
 # Get the mean and median steps per day
 newMeanStepsTaken <- as.character(round(mean(newStepsByDaySummary$steps),1))
 newMedianStepsTaken <- as.character(round(median(newStepsByDaySummary$steps),1))
-
-newActivityTableDF$dayOfWeek <- weekdays(as.Date(newActivityTableDF$date))
-newActivityTableDF$dayType <- "Weekday"
-weekendIndex <- newActivityTableDF$dayOfWeek == "Saturday" | newActivityTableDF$dayOfWeek == "Sunday"
-newActivityTableDF$dayType[weekendIndex] <- "Weekend"
-
-weekendIntervalGroup <- group_by(newActivityTableDF[newActivityTableDF$dayType=="Weekend",], interval)
-weekendIntervalSummary <- summarise(weekendIntervalGroup, steps = sum(stepsNullsSubstituted), numOfDays = n_distinct(date))
-weekendIntervalSummary$avgSteps <- weekendIntervalSummary$steps / weekendIntervalSummary$numOfDays
-
-weekdayIntervalGroup <- group_by(newActivityTableDF[newActivityTableDF$dayType=="Weekday",], interval)
-weekdayIntervalSummary <- summarise(weekdayIntervalGroup, steps = sum(stepsNullsSubstituted), numOfDays = n_distinct(date))
-weekdayIntervalSummary$avgSteps <- weekdayIntervalSummary$steps / weekdayIntervalSummary$numOfDays
-#http://zevross.com/blog/2019/04/02/easy-multi-panel-plots-in-r-using-facet_wrap-and-facet_grid-from-ggplot2/
 ```
 
 ## Total Number of Steps Taken Per Day
@@ -106,12 +93,12 @@ The mean number of steps per day was `r meanStepsTaken` while the median was `r 
 
 ## Average Daily Activity Pattern
 
-The interval with the highest average steps is `r invervalWithMaxStepsOnAverage`
-
 ```{r}
 # Display a line chart of the average number of steps per interval
 plot(intervalSummary$interval, intervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
 ```
+
+The interval with the highest average steps is `r invervalWithMaxStepsOnAverage`.
 
 ## Imputing Missing Values
 
@@ -124,12 +111,10 @@ hist(newStepsByDaySummary$steps,main="Steps Per Day",xlab="Number of Steps",col=
 
 The mean number of steps per day was `r newMeanStepsTaken` while the median was `r newMedianStepsTaken`.
 
-There is not a major difference with the imputed values
+There is not a major difference with the imputed values. The median is now equal to the mean.
 
 ## Comparing Activity Patters of Weekdays to Weekends
 
 ```{r}
-#plot(weekendIntervalSummary$interval, weekendIntervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
-#plot(weekdayIntervalSummary$interval, weekdayIntervalSummary$avgSteps, type="l", xlab="Interval", ylab="Avg. Number of Steps", main="Average Number of Steps Per Interval")
 ggplot(data=summaryByDayType, aes(x=interval, y=avgStepsPerDayType, group=1)) + geom_line() + geom_point() + facet_wrap(~ dayType) + labs(y="Average Steps per Day", x="Interval")
 ```
